@@ -2,9 +2,8 @@
 name: Deploy Jekyll with GitHub Pages dependencies preinstalled
 
 on:
-  # Runs on pushes targeting the default branch
-  push:
-    branches: ["main"]
+  # JupyterLite deploy.yml owns automatic Pages publishing.
+  # Keep this legacy workflow available only for an explicit manual run.
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

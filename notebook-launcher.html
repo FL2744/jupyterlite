@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask ARC</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#182a43;font:16px/1.5 system-ui,sans-serif}main{max-width:1080px;margin:auto;padding:28px}h1{font-size:28px;margin:0 0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}label,h2{display:block;font-size:18px;font-weight:650;margin:0 0 10px}input,textarea,pre{width:100%;min-height:220px;margin:0;padding:16px;background:white;border:1px solid #b6c4d6;border-radius:8px;font:15px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}textarea{resize:vertical}input{min-height:0;margin-bottom:18px}button{font:inherit;padding:10px 20px;margin-top:16px;border:0;border-radius:6px;background:#2459c4;color:white;cursor:pointer}button:disabled{opacity:.55;cursor:wait}#status{min-height:24px}details{margin-top:24px}summary{cursor:pointer}iframe{width:100%;height:560px;border:1px solid #b6c4d6;margin-top:12px;background:white}#log{min-height:80px;max-height:250px;overflow:auto}:focus-visible{outline:3px solid #d97a00;outline-offset:3px}@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:18px}}
+</style>
+</head>
+<body><main>
+<h1>Ask ARC</h1>
+<form id="form"><div class="grid">
+<section><label for="api-key">ARC API key</label><input id="api-key" type="password" autocomplete="off" placeholder="Enter your ARC API key" required>
+<label for="question">Question</label><textarea id="question" required>Why is the sky blue?</textarea><button id="run" disabled>Ask ARC</button><p>Your key is sent to the ARC API through the notebook and is not saved by this page.</p></section>
+<section><h2>Results</h2><pre id="result" aria-live="polite">Run the notebook to see its result.</pre></section>
+</div></form>
+<p id="status" role="status">Connecting to JupyterLite…</p>
+<h2>Notebook output</h2><pre id="log" aria-label="Printed notebook output"></pre>
+<details><summary>Show JupyterLite</summary><iframe id="jupyter" title="JupyterLite notebook"></iframe></details>
+<noscript>Enable JavaScript to run the notebook.</noscript>
+</main>
+<script>
+const url = new URL('https://fl2744.github.io/jupyterlite/lab/index.html');
+url.searchParams.set('path', 'pyodide/simple-api-call.ipynb');
+const channel = 'notebook-bridge-v1';
+const frame = document.getElementById('jupyter');
+const button = document.getElementById('run');
+const status = document.getElementById('status');
+const log = document.getElementById('log');
+const result = document.getElementById('result');
+let activeId = null, connected = false;
+const handshake = 'connect-' + Math.random().toString(36).slice(2);
+function send(message) { frame.contentWindow.postMessage({channel, ...message}, url.origin); }
+window.addEventListener('message', event => {
+  if (event.origin !== url.origin || event.source !== frame.contentWindow || event.data?.channel !== channel) return;
+  const m = event.data;
+  if (m.type === 'connected' && m.id === handshake) {
+    connected = true; clearInterval(ping); button.disabled = false; status.textContent = 'Ready.'; return;
+  }
+  if (!activeId || m.id !== activeId) return;
+  if (m.type === 'status') status.textContent = m.text;
+  if (m.type === 'stream') log.textContent += m.text;
+  if (m.type === 'clear') log.textContent = '';
+  if (m.type === 'result') result.textContent = m.outputs?.answer ?? JSON.stringify(m.outputs, null, 2);
+  if (m.type === 'done' || m.type === 'error') {
+    status.textContent = m.type === 'done' ? 'Finished.' : 'Error: ' + m.error;
+    if (m.type === 'error') result.textContent = 'No result returned.';
+    activeId = null; button.disabled = false;
+  }
+});
+frame.src = url.href;
+const ping = setInterval(() => send({type:'ping', id:handshake}), 1000);
+setTimeout(() => {
+  if (!connected) {
+    clearInterval(ping);
+    status.textContent = 'Bridge not connected. Install the companion bridge on your JupyterLite site and serve this page over HTTP or HTTPS, then reload.';
+  }
+}, 30000);
+document.getElementById('form').addEventListener('submit', event => {
+  event.preventDefault();
+  if (!connected || activeId) return;
+  const inputs = {
+    api_key: document.getElementById('api-key').value.trim(),
+    question: document.getElementById('question').value.trim()
+  };
+  if (!inputs.api_key || !inputs.question) { status.textContent = 'Enter an ARC API key and a question.'; return; }
+  activeId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  button.disabled = true; log.textContent = ''; result.textContent = 'Running…';
+  status.textContent = 'Sending inputs…';
+  send({type:'run', id:activeId, inputs});
+  document.getElementById('api-key').value = '';
+  inputs.api_key = '';
+});
+</script></body></html>
