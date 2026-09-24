@@ -16,11 +16,14 @@
 <section><h2>Results</h2><pre id="result" aria-live="polite">Run the notebook to see its result.</pre></section>
 </div></form>
 <p id="status" role="status">Connecting to JupyterLite…</p>
+<button id="reconnect" type="button" hidden>Reconnect to JupyterLite</button>
+<p id="hosted-help" hidden><a href="https://fl2744.github.io/jupyterlite/notebook-launcher.html">Open the hosted interface</a></p>
 <h2>Notebook output</h2><pre id="log" aria-label="Printed notebook output"></pre>
 <details><summary>Show JupyterLite</summary><iframe id="jupyter" title="JupyterLite notebook"></iframe></details>
 <noscript>Enable JavaScript to run the notebook.</noscript>
 </main>
 <script>
+const hostedURL = 'https://fl2744.github.io/jupyterlite/notebook-launcher.html';
 const url = new URL('https://fl2744.github.io/jupyterlite/lab/index.html');
 url.searchParams.set('path', 'pyodide/simple-api-call.ipynb');
 const channel = 'notebook-bridge-v1';
@@ -30,13 +33,18 @@ const status = document.getElementById('status');
 const log = document.getElementById('log');
 const result = document.getElementById('result');
 let activeId = null, connected = false;
-const handshake = 'connect-' + Math.random().toString(36).slice(2);
+let ping, slowTimer;
+const reconnect = document.getElementById('reconnect');
+const hostedHelp = document.getElementById('hosted-help');
+let handshake = 'connect-' + Math.random().toString(36).slice(2);
 function send(message) { frame.contentWindow.postMessage({channel, ...message}, url.origin); }
 window.addEventListener('message', event => {
   if (event.origin !== url.origin || event.source !== frame.contentWindow || event.data?.channel !== channel) return;
   const m = event.data;
   if (m.type === 'connected' && m.id === handshake) {
-    connected = true; clearInterval(ping); button.disabled = false; status.textContent = 'Ready.'; return;
+    connected = true; clearInterval(ping); clearTimeout(slowTimer);
+    reconnect.hidden = true; hostedHelp.hidden = true;
+    button.disabled = false; status.textContent = 'Ready.'; return;
   }
   if (!activeId || m.id !== activeId) return;
   if (m.type === 'status') status.textContent = m.text;
@@ -49,14 +57,37 @@ window.addEventListener('message', event => {
     activeId = null; button.disabled = false;
   }
 });
-frame.src = url.href;
-const ping = setInterval(() => send({type:'ping', id:handshake}), 1000);
-setTimeout(() => {
-  if (!connected) {
-    clearInterval(ping);
-    status.textContent = 'Bridge not connected. Install the companion bridge on your JupyterLite site and serve this page over HTTP or HTTPS, then reload.';
-  }
-}, 30000);
+function connect() {
+  if (activeId) return;
+  clearInterval(ping); clearTimeout(slowTimer);
+  connected = false; button.disabled = true; reconnect.hidden = true;
+  handshake = 'connect-' + Math.random().toString(36).slice(2);
+  status.textContent = 'Connecting to JupyterLite… The first load may take a minute.';
+  // A fresh URL avoids reusing a Lab page cached before the bridge was installed.
+  url.searchParams.set('bridge', Date.now().toString());
+  frame.src = url.href;
+  ping = setInterval(() => send({type:'ping', id:handshake}), 1000);
+  slowTimer = setTimeout(() => {
+    if (!connected) {
+      status.textContent = 'JupyterLite is taking longer to connect. Still trying; you can also reconnect or open the hosted interface.';
+      reconnect.hidden = false; hostedHelp.hidden = false;
+    }
+  }, 30000);
+}
+frame.addEventListener('load', () => {
+  if (!connected) send({type:'ping', id:handshake});
+});
+reconnect.addEventListener('click', connect);
+if (location.protocol === 'file:') {
+  status.textContent = 'Opening the hosted interface…';
+  hostedHelp.hidden = false;
+  location.replace(hostedURL);
+} else if (location.origin !== url.origin && location.origin !== 'http://localhost:8000') {
+  status.textContent = 'This address is not configured to connect to the notebook. Use the hosted interface below.';
+  hostedHelp.hidden = false;
+} else {
+  connect();
+}
 document.getElementById('form').addEventListener('submit', event => {
   event.preventDefault();
   if (!connected || activeId) return;
