@@ -46,7 +46,7 @@
       const session = await wait(starting);
       const kernel = session.kernel;
       if (!kernel) throw new Error('Unable to start Python.');
-      await wait(kernel.requestKernelInfo());
+      await wait(kernel.info);
       send('status',{text:'Running ' + path + '…'});
       const cell = content.cells[0];
       future = kernel.requestExecute({code:message.code,stop_on_error:true,store_history:true,allow_stdin:true});

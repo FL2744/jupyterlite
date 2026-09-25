@@ -2,7 +2,7 @@ const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/st
 async function scenario(mode) {
  let listener, sent=[], saves=[], shuts=0, starts=0, request, resolveDone, f;
  const parent={postMessage:m=>sent.push(m)};
- const kernel={requestKernelInfo:async()=>({}),sendInputReply:({value},header)=>{assert.equal(value,'42');assert.equal(header.msg_id,'prompt');f.onIOPub({header:{msg_type:'stream'},content:{name:'stdout',text:'42\n'}});resolveDone({content:{status:'ok'}});},requestExecute:options=>{
+ const kernel={info:Promise.resolve({}),sendInputReply:({value},header)=>{assert.equal(value,'42');assert.equal(header.msg_id,'prompt');f.onIOPub({header:{msg_type:'stream'},content:{name:'stdout',text:'42\n'}});resolveDone({content:{status:'ok'}});},requestExecute:options=>{
   assert(options.allow_stdin);f={dispose(){},done:new Promise(r=>resolveDone=r)};
   setImmediate(()=>{
    if(mode==='input') f.onStdin({header:{msg_type:'input_request',msg_id:'prompt'},content:{prompt:'Enter a number: ',password:false}});
