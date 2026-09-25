@@ -1,4 +1,5 @@
 """Run after `jupyter lite build`: python bridge/install.py _output"""
+import hashlib
 import json
 import re
 import shutil
@@ -16,7 +17,9 @@ def configure(match):
 html, count = re.subn(pattern, configure, html, count=1, flags=re.S)
 if count != 1:
     raise SystemExit('Cannot locate JupyterLite page configuration; no changes written.')
-tag = '<script src="./notebook-bridge.js"></script>'
+version = hashlib.sha256(Path(__file__).with_name('bridge.js').read_bytes()).hexdigest()[:12]
+html = re.sub(r'<script\s+src="\./notebook-bridge\.js(?:\?[^"]*)?"></script>', '', html)
+tag = f'<script src="./notebook-bridge.js?v={version}"></script>'
 if tag not in html:
     if '</body>' not in html:
         raise SystemExit('Cannot locate closing body; no changes written.')
