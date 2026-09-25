@@ -47,6 +47,20 @@
       const kernel = session.kernel;
       if (!kernel) throw new Error('Unable to start Python.');
       await wait(kernel.info);
+      // Inject separately: never place a credential in the saved source or history.
+      const keyBytes = new TextEncoder().encode(typeof message.apiKey === 'string' ? message.apiKey : '');
+      let keyBinary = '';
+      for (const byte of keyBytes) keyBinary += String.fromCharCode(byte);
+      const encodedKey = btoa(keyBinary);
+      message.apiKey = '';
+      const setup = kernel.requestExecute({
+        code:`import base64 as _arc_key_b64\nARC_API_KEY = _arc_key_b64.b64decode('${encodedKey}').decode('utf-8')\ndel _arc_key_b64`,
+        silent:true, store_history:false, allow_stdin:false, stop_on_error:true
+      });
+      try {
+        const reply = await wait(setup.done);
+        if (reply.content.status !== 'ok') throw new Error('Unable to initialize the ARC key for this run.');
+      } finally { setup.dispose(); }
       send('status',{text:'Running ' + path + '…'});
       const cell = content.cells[0];
       future = kernel.requestExecute({code:message.code,stop_on_error:true,store_history:true,allow_stdin:true});
@@ -108,7 +122,7 @@
     const send = (type, data = {}) => event.source.postMessage(
       { channel: CHANNEL, id: message.id, type, ...data }, event.origin);
     if (message.type === 'ping') {
-      send('connected', {capabilities: ['run-code', 'stdin', 'stop-code', 'managed-kernel-v2']});
+      send('connected', {capabilities: ['run-code', 'stdin', 'stop-code', 'managed-kernel-v2', 'arc-key-session']});
       return;
     }
     if (message.type === 'stop-code' || message.type === 'input-reply') {
@@ -122,6 +136,7 @@
     }
     if (!['run', 'run-code'].includes(message.type)) return;
     if (busy) { send('error', {error: 'A notebook execution is already running.'}); return; }
+    if (message.type === 'run-code' && message.apiKey !== undefined && (typeof message.apiKey !== 'string' || message.apiKey.length > 16384)) { send('error', {error:'Invalid ARC key.'}); return; }
     if (message.type === 'run-code' && (typeof message.code !== 'string' || !message.code.trim() || message.code.length > 200000)) { send('error', {error: 'Enter Python code (maximum 200,000 characters).'}); return; }
     if (message.type === 'run' && (!message.inputs || typeof message.inputs !== 'object' || Array.isArray(message.inputs))) {
       send('error', {error: 'Inputs must be a JSON object.'}); return;

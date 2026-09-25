@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ask ARC</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#182a43;font:16px/1.5 Helvetica,Arial,sans-serif}main{width:100%;margin:0;padding:24px 32px 240px}h1{font-size:28px;margin:0 0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}label,h2{display:block;font-size:18px;font-weight:650;margin:0 0 10px}input,textarea,pre{width:100%;min-height:220px;margin:0;padding:16px;background:white;border:1px solid #b6c4d6;border-radius:8px;font:15px/1.6 Helvetica,Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}textarea{resize:vertical}input{min-height:0;margin-bottom:18px}button{font:inherit;padding:10px 20px;margin-top:16px;border:0;border-radius:6px;background:#2459c4;color:white;cursor:pointer}button:disabled{opacity:.55;cursor:wait}#status{min-height:24px}details{margin-top:24px}summary{cursor:pointer}.jupyter-window{height:580px;min-height:300px;width:100%;resize:vertical;overflow:hidden;margin-top:12px;padding-bottom:20px;border:1px solid #b6c4d6;border-radius:8px;background:#e8eef7}.jupyter-window iframe{display:block;width:100%;height:100%;border:0;background:white}#log{min-height:80px;max-height:250px;overflow:auto}:focus-visible{outline:3px solid #d97a00;outline-offset:3px}@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:18px 16px 240px}}
+*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#182a43;font:16px/1.5 Helvetica,Arial,sans-serif}main{width:100%;margin:0;padding:24px 32px 240px}h1{font-size:28px;margin:0 0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}label,h2{display:block;font-size:18px;font-weight:650;margin:0 0 10px}input,textarea,pre{width:100%;min-height:220px;margin:0;padding:16px;background:white;border:1px solid #b6c4d6;border-radius:8px;font:15px/1.6 Helvetica,Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}textarea{resize:vertical}input{min-height:0;margin-bottom:18px}button{font:inherit;padding:10px 20px;margin-top:16px;border:0;border-radius:6px;background:#2459c4;color:white;cursor:pointer}button:disabled{opacity:.55;cursor:wait}#status{min-height:24px;width:fit-content;max-width:100%;padding:8px 12px;background:#fff;border:1px solid #dce3ed;border-radius:10px;overflow-wrap:anywhere}details{margin-top:24px}summary{cursor:pointer}.jupyter-window{height:580px;min-height:300px;width:100%;resize:vertical;overflow:hidden;margin-top:12px;padding-bottom:20px;border:1px solid #b6c4d6;border-radius:8px;background:#e8eef7}.jupyter-window iframe{display:block;width:100%;height:100%;border:0;background:white}#log{min-height:80px;max-height:250px;overflow:auto}:focus-visible{outline:3px solid #d97a00;outline-offset:3px}@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:18px 16px 240px}}
 #api-key{margin-bottom:6px}.key-help{display:block;margin:0 0 20px;padding:0;border:0;border-radius:0;background:transparent;color:#2459c4;font-size:14px;text-decoration:underline;text-underline-offset:3px}.key-help:hover{color:#163b86}
 #key-help-dialog{width:min(1100px,94vw);max-height:90vh;max-height:90dvh;margin:auto;padding:20px;border:0;border-radius:12px;background:white;color:#182a43;box-shadow:0 20px 80px #0005;overflow:auto}
 #key-help-dialog::backdrop{background:rgb(12 23 40 / 70%)}
 .key-help-header{display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:-20px;background:white;padding:12px 0;z-index:1}.key-help-header h2{margin:0}.key-help-header button{margin:0;white-space:nowrap}
 #key-help-image{display:block;width:100%;height:auto}body.key-help-open{overflow:hidden}
 .site-logo{margin:0 0 44px}.site-logo img{display:block;width:280px;max-width:100%;height:auto;transform:translateX(-0.21475%)}
+.result-actions{display:flex;justify-content:flex-end;margin-top:8px}#export-results{margin:0}#export-results[aria-disabled="true"]{opacity:.55}
+#stdin-label{font-size:1rem;font-weight:700}
 </style>
 </head>
 <body><main>
@@ -19,8 +21,8 @@
 <form id="form"><div class="grid">
 <section><label for="api-key">ARC API key</label><input id="api-key" type="password" autocomplete="off" placeholder="Enter your ARC API key" required>
 <button type="button" id="key-help-open" class="key-help" aria-haspopup="dialog" aria-controls="key-help-dialog">Where do I find this?</button>
-<label for="question">Question</label><textarea id="question" required>Why is the sky blue?</textarea><button id="run" disabled>Ask ARC</button><p>If you are not connected to a Virginia Tech network, you will need to turn on the Cisco Secure Client VPN before using this tool. Your API key is only used to connect the notebook to the ARC API and is not saved by this page. The Python code runs locally in your browser on your own computer, so your work stays on your machine.</p></section>
-<section><h2>Results</h2><pre id="result" aria-live="polite">Click on "Ask ARC" to see the results.</pre></section>
+<label for="question">Question</label><textarea id="question" required>Why is the sky blue?</textarea><button id="run" disabled>Ask ARC</button><p>If you are not connected to a Virginia Tech network, you will need to turn on the <a href="https://www.nis.vt.edu/ServicePortfolio/Network/RemoteAccess-VPN.html" target="_blank" rel="noopener noreferrer">Cisco Secure Client VPN</a> before using this tool. Your API key stays in this page while it is open and is available to your Python code as ARC_API_KEY. This page does not save the key to browser storage or notebook source. Only run code you trust with your key. The Python code runs locally in your browser, which means your work stays on your own computer.</p></section>
+<section><h2>Results</h2><pre id="result" aria-live="polite">Click on "Ask ARC" to see the results.</pre><div class="result-actions"><a id="export-results" class="key-help" href="#" aria-disabled="true">Export results as text.</a></div></section>
 </div></form>
 <p id="status" role="status">Connecting to JupyterLite…</p>
 <button id="reconnect" type="button" hidden>Reconnect to JupyterLite</button>
@@ -66,6 +68,33 @@ const button = document.getElementById('run');
 const status = document.getElementById('status');
 const log = document.getElementById('log');
 const result = document.getElementById('result');
+const exportResults = document.getElementById('export-results');
+let exportURL = null;
+function clearExport() {
+  if (exportURL) URL.revokeObjectURL(exportURL);
+  exportURL = null;
+  exportResults.href = '#';
+  exportResults.removeAttribute('download');
+  exportResults.setAttribute('aria-disabled', 'true');
+}
+function prepareExport() {
+  clearExport();
+  exportURL = URL.createObjectURL(new Blob([result.textContent], {type:'text/plain;charset=utf-8'}));
+  exportResults.href = exportURL;
+  exportResults.download = 'arc-results-' + new Date().toISOString().replace(/[:.]/g, '-') + '.txt';
+  exportResults.setAttribute('aria-disabled', 'false');
+}
+exportResults.addEventListener('click', event => {
+  if (!exportURL) {
+    event.preventDefault();
+    status.textContent = 'Click Ask ARC and wait for a result before exporting.';
+  }
+});
+window.addEventListener('pagehide', () => { clearExport(); document.getElementById('api-key').value = ''; });
+window.addEventListener('pageshow', event => {
+  if (event.persisted && result.textContent && !['Click on "Ask ARC" to see the results.', 'Running…', 'No result returned.'].includes(result.textContent)) prepareExport();
+});
+
 let activeId = null, connected = false, codeSupported = false, activeKind = null;
 const codeButton = document.getElementById('code-run');
 const stopButton = document.getElementById('code-stop');
@@ -85,7 +114,7 @@ window.addEventListener('message', event => {
   if (m.type === 'connected' && m.id === handshake) {
     connected = true; clearInterval(ping); clearTimeout(slowTimer);
     reconnect.hidden = true; hostedHelp.hidden = true;
-    codeSupported = m.capabilities?.includes('managed-kernel-v2') === true;
+    codeSupported = m.capabilities?.includes('arc-key-session') === true;
     updateButtons(); status.textContent = codeSupported ? 'Ready.' : 'Ask ARC is ready. Update the JupyterLite bridge to enable Run Code.'; return;
   }
   if (!activeId || m.id !== activeId) return;
@@ -99,12 +128,12 @@ window.addEventListener('message', event => {
   if (m.type === 'status') status.textContent = m.text;
   if (m.type === 'stream') log.textContent += m.text;
   if (m.type === 'clear') log.textContent = '';
-  if (m.type === 'result') result.textContent = m.outputs?.answer ?? JSON.stringify(m.outputs, null, 2);
+  if (m.type === 'result') { result.textContent = m.outputs?.answer ?? JSON.stringify(m.outputs, null, 2); prepareExport(); }
   if (m.type === 'done' || m.type === 'error') {
     status.textContent = m.type === 'done' ? 'Finished.' : 'Error: ' + m.error;
     if (m.type === 'error') {
       if (activeKind === 'code') log.textContent += '\nError: ' + m.error;
-      else result.textContent = 'No result returned.';
+      else { result.textContent = 'No result returned.'; clearExport(); }
     }
     clearTimeout(recoveryTimer); stdinForm.hidden = true; stdinValue.value = '';
     activeId = null; activeKind = null; updateButtons();
@@ -169,10 +198,9 @@ document.getElementById('form').addEventListener('submit', event => {
   };
   if (!inputs.api_key || !inputs.question) { status.textContent = 'Enter an ARC API key and a question.'; return; }
   activeId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-  activeKind = 'arc'; updateButtons(); log.textContent = ''; result.textContent = 'Running…';
+  activeKind = 'arc'; clearExport(); updateButtons(); log.textContent = ''; result.textContent = 'Running…';
   status.textContent = 'Sending inputs…';
   send({type:'run', id:activeId, inputs});
-  document.getElementById('api-key').value = '';
   inputs.api_key = '';
 });
 document.getElementById('code-form').addEventListener('submit', event => {
@@ -185,6 +213,6 @@ document.getElementById('code-form').addEventListener('submit', event => {
   activeKind = 'code'; updateButtons();
   outputDetails.open = true; log.textContent = '';
   status.textContent = 'Creating your notebook…';
-  send({type:'run-code', id:activeId, code});
+  send({type:'run-code', id:activeId, code, apiKey:document.getElementById('api-key').value.trim()});
 });
 </script></body></html>
