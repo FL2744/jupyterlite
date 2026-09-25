@@ -29,16 +29,16 @@ The kernel retains other variables between runs. The bridge executes the publish
 
    ```sh
    python jupyterlite-bridge/install.py dist
-   cp notebook-launcher.html dist/notebook-launcher.html
+   cp arc-chat.html notebook-launcher.html dist/
    ```
 
-   Copy `notebook-launcher.html` into the repository root first. Replace `dist`
+   Copy `arc-chat.html` into the repository root first. Replace `dist`
    if your build uses a different destination. The installer enables
    `exposeAppInBrowser` in the generated Lab page and adds the bridge script.
    Run it after every build; editing generated files manually will not persist.
 
 5. Deploy through your existing GitHub Pages workflow. Your HTML will be at
-   `https://fl2744.github.io/jupyterlite/notebook-launcher.html`.
+   `https://fl2744.github.io/jupyterlite/arc-chat.html`.
 
 The page and bridge point to `pyodide/simple-api-call.ipynb`, as shown in
 JupyterLite. Change the path in both `bridge.js` and the HTML if it moves.
@@ -52,7 +52,7 @@ and parent window; it accepts only JSON inputs for the fixed notebook, never
 arbitrary Python from the HTML. Do not use a wildcard origin.
 
 For local testing, serve the workspace with `python3 -m http.server 8000` and
-open `http://localhost:8000/notebook-launcher.html`. Double-clicking the file
+open `http://localhost:8000/arc-chat.html`. Double-clicking the file
 produces a `null` origin and is intentionally unsupported.
 
 Inputs are passed in memory, not in URLs or notebook cell source. Nothing here
@@ -69,7 +69,9 @@ References:
 
 ## VT Domains interface
 
-Upload `notebook-launcher.html` to `public_html/notebook-launcher.html` for
-https://l1001.vt.domains/notebook-launcher.html. Both the form and bridge permit
+Upload `arc-chat.html` to `public_html/arc-chat.html` for
+https://l1001.vt.domains/arc-chat.html. Both the form and bridge permit
 that exact HTTPS origin. JupyterLite and the notebook remain on GitHub Pages.
 Do not upload the source notebook or installer to cPanel.
+
+The old `notebook-launcher.html` address is a compatibility redirect to `arc-chat.html`; keep both files in the deployed site.
