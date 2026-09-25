@@ -5,29 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ask ARC</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#182a43;font:16px/1.5 system-ui,sans-serif}main{width:100%;margin:0;padding:24px 32px 240px}h1{font-size:28px;margin:0 0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}label,h2{display:block;font-size:18px;font-weight:650;margin:0 0 10px}input,textarea,pre{width:100%;min-height:220px;margin:0;padding:16px;background:white;border:1px solid #b6c4d6;border-radius:8px;font:15px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}textarea{resize:vertical}input{min-height:0;margin-bottom:18px}button{font:inherit;padding:10px 20px;margin-top:16px;border:0;border-radius:6px;background:#2459c4;color:white;cursor:pointer}button:disabled{opacity:.55;cursor:wait}#status{min-height:24px}details{margin-top:24px}summary{cursor:pointer}.jupyter-window{height:580px;min-height:300px;width:100%;resize:vertical;overflow:hidden;margin-top:12px;padding-bottom:20px;border:1px solid #b6c4d6;border-radius:8px;background:#e8eef7}.jupyter-window iframe{display:block;width:100%;height:100%;border:0;background:white}#log{min-height:80px;max-height:250px;overflow:auto}:focus-visible{outline:3px solid #d97a00;outline-offset:3px}@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:18px 16px 240px}}
+*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#182a43;font:16px/1.5 Helvetica,Arial,sans-serif}main{width:100%;margin:0;padding:24px 32px 240px}h1{font-size:28px;margin:0 0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}label,h2{display:block;font-size:18px;font-weight:650;margin:0 0 10px}input,textarea,pre{width:100%;min-height:220px;margin:0;padding:16px;background:white;border:1px solid #b6c4d6;border-radius:8px;font:15px/1.6 Helvetica,Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}textarea{resize:vertical}input{min-height:0;margin-bottom:18px}button{font:inherit;padding:10px 20px;margin-top:16px;border:0;border-radius:6px;background:#2459c4;color:white;cursor:pointer}button:disabled{opacity:.55;cursor:wait}#status{min-height:24px}details{margin-top:24px}summary{cursor:pointer}.jupyter-window{height:580px;min-height:300px;width:100%;resize:vertical;overflow:hidden;margin-top:12px;padding-bottom:20px;border:1px solid #b6c4d6;border-radius:8px;background:#e8eef7}.jupyter-window iframe{display:block;width:100%;height:100%;border:0;background:white}#log{min-height:80px;max-height:250px;overflow:auto}:focus-visible{outline:3px solid #d97a00;outline-offset:3px}@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:18px 16px 240px}}
+#api-key{margin-bottom:6px}.key-help{display:block;margin:0 0 20px;padding:0;border:0;border-radius:0;background:transparent;color:#2459c4;font-size:14px;text-decoration:underline;text-underline-offset:3px}.key-help:hover{color:#163b86}
+#key-help-dialog{width:min(1100px,94vw);max-height:90vh;max-height:90dvh;margin:auto;padding:20px;border:0;border-radius:12px;background:white;color:#182a43;box-shadow:0 20px 80px #0005;overflow:auto}
+#key-help-dialog::backdrop{background:rgb(12 23 40 / 70%)}
+.key-help-header{display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:-20px;background:white;padding:12px 0;z-index:1}.key-help-header h2{margin:0}.key-help-header button{margin:0;white-space:nowrap}
+#key-help-image{display:block;width:100%;height:auto}body.key-help-open{overflow:hidden}
+.site-logo{margin:0 0 44px}.site-logo img{display:block;width:280px;max-width:100%;height:auto;transform:translateX(-0.21475%)}
 </style>
 </head>
 <body><main>
-<h1>Ask ARC</h1>
+<h1 class="site-logo"><img src="arc-chat-logo.png?v=20260925-aligned" alt="Ask ARC"></h1>
 <form id="form"><div class="grid">
 <section><label for="api-key">ARC API key</label><input id="api-key" type="password" autocomplete="off" placeholder="Enter your ARC API key" required>
+<button type="button" id="key-help-open" class="key-help" aria-haspopup="dialog" aria-controls="key-help-dialog">Where do I find this?</button>
 <label for="question">Question</label><textarea id="question" required>Why is the sky blue?</textarea><button id="run" disabled>Ask ARC</button><p>If you are not connected to a Virginia Tech network, you will need to turn on the Cisco Secure Client VPN before using this tool. Your API key is only used to connect the notebook to the ARC API and is not saved by this page. The Python code runs locally in your browser on your own computer, so your work stays on your machine.</p></section>
-<section><h2>Results</h2><pre id="result" aria-live="polite">Run the notebook to see its result.</pre></section>
+<section><h2>Results</h2><pre id="result" aria-live="polite">Click on "Ask ARC" to see the results.</pre></section>
 </div></form>
 <p id="status" role="status">Connecting to JupyterLite…</p>
 <button id="reconnect" type="button" hidden>Reconnect to JupyterLite</button>
 <p id="hosted-help" hidden><a href="https://fl2744.github.io/jupyterlite/notebook-launcher.html">Open the hosted interface</a></p>
-<details id="code-details"><summary>Run Code</summary>
+<details id="code-details"><summary><strong>Run your own code</strong></summary>
 <form id="code-form"><textarea id="code-input" aria-label="Python or Pyodide code" placeholder="Paste Python or Pyodide code here" spellcheck="false" required style="margin-top:12px"></textarea>
-<button id="code-run" type="submit" disabled>Run</button></form></details>
-<details id="output-details"><summary>Notebook output</summary><pre id="log" aria-label="Printed notebook output" aria-live="polite" style="margin-top:12px"></pre></details>
-<details><summary>Show JupyterLite</summary>
+<button id="code-run" type="submit" disabled>Run</button> <button id="code-stop" type="button" hidden>Stop / Reset</button></form></details>
+<details id="output-details"><summary>Notebook output</summary><pre id="log" aria-label="Printed notebook output" aria-live="polite" style="margin-top:12px"></pre><form id="stdin-form" hidden style="margin-top:12px"><label id="stdin-label" for="stdin-value">Enter a value:</label><input id="stdin-value" autocomplete="off"><button type="submit">Continue</button></form></details>
+<details><summary>Advanced: Show JupyterLite</summary>
 <div class="jupyter-window" id="jupyter-window"><iframe id="jupyter" title="JupyterLite notebook"></iframe></div>
 </details>
 <noscript>Enable JavaScript to run the notebook.</noscript>
 </main>
+<dialog id="key-help-dialog" aria-labelledby="key-help-title">
+<div class="key-help-header"><h2 id="key-help-title">Where to find your ARC API key</h2><button type="button" id="key-help-close" autofocus>Close</button></div>
+<img id="key-help-image" src="get-api-keys.png" alt="Step-by-step graphic showing where to find your ARC API key" loading="lazy">
+<p id="key-help-error" role="status" hidden>The instructions image could not be loaded. Please try again later.</p>
+</dialog>
 <script>
+const keyHelpDialog = document.getElementById('key-help-dialog');
+document.getElementById('key-help-open').addEventListener('click', () => {
+  keyHelpDialog.showModal();
+  document.body.classList.add('key-help-open');
+});
+document.getElementById('key-help-close').addEventListener('click', () => keyHelpDialog.close());
+keyHelpDialog.addEventListener('click', event => {
+  const bounds = keyHelpDialog.getBoundingClientRect();
+  if (event.target === keyHelpDialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) keyHelpDialog.close();
+});
+keyHelpDialog.addEventListener('close', () => {
+  document.body.classList.remove('key-help-open');
+  document.getElementById('api-key').focus();
+});
+document.getElementById('key-help-image').addEventListener('error', () => {
+  document.getElementById('key-help-error').hidden = false;
+});
 const hostedURL = 'https://fl2744.github.io/jupyterlite/notebook-launcher.html';
 const url = new URL('https://fl2744.github.io/jupyterlite/lab/index.html');
 url.searchParams.set('path', 'pyodide/simple-api-call.ipynb');
@@ -39,8 +68,12 @@ const log = document.getElementById('log');
 const result = document.getElementById('result');
 let activeId = null, connected = false, codeSupported = false, activeKind = null;
 const codeButton = document.getElementById('code-run');
+const stopButton = document.getElementById('code-stop');
+const stdinForm = document.getElementById('stdin-form');
+const stdinValue = document.getElementById('stdin-value');
+let recoveryTimer;
 const outputDetails = document.getElementById('output-details');
-function updateButtons() { button.disabled = !connected || !!activeId; codeButton.disabled = !connected || !codeSupported || !!activeId; }
+function updateButtons() { stopButton.hidden = activeKind !== 'code'; button.disabled = !connected || !!activeId; codeButton.disabled = !connected || !codeSupported || !!activeId; }
 let ping, slowTimer;
 const reconnect = document.getElementById('reconnect');
 const hostedHelp = document.getElementById('hosted-help');
@@ -52,10 +85,17 @@ window.addEventListener('message', event => {
   if (m.type === 'connected' && m.id === handshake) {
     connected = true; clearInterval(ping); clearTimeout(slowTimer);
     reconnect.hidden = true; hostedHelp.hidden = true;
-    codeSupported = m.capabilities?.includes('run-code') === true;
+    codeSupported = m.capabilities?.includes('managed-kernel-v2') === true;
     updateButtons(); status.textContent = codeSupported ? 'Ready.' : 'Ask ARC is ready. Update the JupyterLite bridge to enable Run Code.'; return;
   }
   if (!activeId || m.id !== activeId) return;
+  if (m.type === 'input-request') {
+    outputDetails.open = true;
+    document.getElementById('stdin-label').textContent = m.prompt;
+    stdinValue.type = m.password ? 'password' : 'text';
+    stdinValue.value = ''; stdinForm.hidden = false; stdinValue.focus();
+    status.textContent = 'Your code is waiting for an answer below.';
+  }
   if (m.type === 'status') status.textContent = m.text;
   if (m.type === 'stream') log.textContent += m.text;
   if (m.type === 'clear') log.textContent = '';
@@ -66,6 +106,7 @@ window.addEventListener('message', event => {
       if (activeKind === 'code') log.textContent += '\nError: ' + m.error;
       else result.textContent = 'No result returned.';
     }
+    clearTimeout(recoveryTimer); stdinForm.hidden = true; stdinValue.value = '';
     activeId = null; activeKind = null; updateButtons();
   }
 });
@@ -90,6 +131,25 @@ frame.addEventListener('load', () => {
   if (!connected) send({type:'ping', id:handshake});
 });
 reconnect.addEventListener('click', connect);
+stdinForm.addEventListener('submit', event => {
+  event.preventDefault();
+  if (!activeId || activeKind !== 'code') return;
+  send({type:'input-reply',id:activeId,value:stdinValue.value});
+  stdinValue.value = ''; stdinForm.hidden = true;
+  status.textContent = 'Running…';
+});
+stopButton.addEventListener('click', () => {
+  if (!activeId || activeKind !== 'code') return;
+  send({type:'stop-code',id:activeId});
+  stdinForm.hidden = true; stdinValue.value = '';
+  status.textContent = 'Stopping Python…';
+  clearTimeout(recoveryTimer);
+  recoveryTimer = setTimeout(() => {
+    activeId = null; activeKind = null;
+    log.textContent += '\nReconnecting the workspace. Your pasted code has been kept.\n';
+    connect();
+  },15000);
+});
 if (location.protocol === 'file:') {
   status.textContent = 'Opening the hosted interface…';
   hostedHelp.hidden = false;
