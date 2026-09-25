@@ -1,4 +1,4 @@
-/* Installed in lab/index.html by install.py. No arbitrary code from messages. */
+/* Installed in lab/index.html by install.py. Pasted code is accepted only from the allowed parent origins. */
 (() => {
   const CHANNEL = 'notebook-bridge-v1';
   // Add the exact origin of your HTML page here if hosted elsewhere.
@@ -24,18 +24,61 @@
     const send = (type, data = {}) => event.source.postMessage(
       { channel: CHANNEL, id: message.id, type, ...data }, event.origin);
     if (message.type === 'ping') {
-      send('connected');
+      send('connected', {capabilities: ['run-code']});
       return;
     }
-    if (message.type !== 'run') return;
+    if (!['run', 'run-code'].includes(message.type)) return;
     if (busy) { send('error', {error: 'A notebook execution is already running.'}); return; }
-    if (!message.inputs || typeof message.inputs !== 'object' || Array.isArray(message.inputs)) {
+    if (message.type === 'run-code' && (typeof message.code !== 'string' || !message.code.trim() || message.code.length > 200000)) { send('error', {error: 'Enter Python code (maximum 200,000 characters).'}); return; }
+    if (message.type === 'run' && (!message.inputs || typeof message.inputs !== 'object' || Array.isArray(message.inputs))) {
       send('error', {error: 'Inputs must be a JSON object.'}); return;
     }
     busy = true;
     send('status', {text: 'Starting Python…'});
     try {
       const app = await getApp();
+      if (message.type === 'run-code') {
+        await app.serviceManager.ready;
+        const specs = app.serviceManager.kernelspecs.specs;
+        const pythonSpec = Object.entries(specs?.kernelspecs || {}).find(([name, spec]) =>
+          spec.language === 'python' && /pyodide/i.test(spec.display_name || name)) ||
+          Object.entries(specs?.kernelspecs || {}).find(([, spec]) => spec.language === 'python');
+        if (!pythonSpec) throw new Error('The site has no Python kernel available.');
+        const [name, spec] = pythonSpec;
+        const created = await app.serviceManager.contents.newUntitled({type: 'notebook'});
+        await app.serviceManager.contents.save(created.path, {type:'notebook', format:'json', content: {
+          nbformat:4, nbformat_minor:5,
+          metadata:{kernelspec:{name, display_name:spec.display_name, language:'python'}},
+          cells:[{id:'pasted-code', cell_type:'code', source:message.code, metadata:{}, execution_count:null, outputs:[]}]
+        }});
+        const panel = await app.commands.execute('docmanager:open', {path:created.path, factory:'Notebook'});
+        await panel.context.ready;
+        await panel.sessionContext.initialize();
+        if (!panel.sessionContext.session?.kernel) await panel.sessionContext.changeKernel({name});
+        await panel.sessionContext.ready;
+        const kernel = panel.sessionContext.session?.kernel;
+        if (!kernel) throw new Error('Unable to start Python.');
+        const cell = panel.content.model.cells.get(0);
+        send('status', {text:'Running ' + created.path + '…'});
+        const future = kernel.requestExecute({code:message.code, stop_on_error:true, store_history:true, allow_stdin:false});
+        future.onIOPub = msg => {
+          const type = msg.header.msg_type, c = msg.content;
+          if (type === 'execute_input') cell.executionCount = c.execution_count;
+          if (['stream','display_data','execute_result','error'].includes(type)) cell.outputs.add({output_type:type, ...c});
+          if (type === 'stream') send('stream', {text:c.text});
+          if (['display_data','execute_result'].includes(type)) {
+            send('stream', {text:(c.data?.['text/plain'] || '[Rich output is available in Show JupyterLite.]') + '\n'});
+          }
+          if (type === 'error') send('stream', {text:(c.traceback || [c.ename + ': ' + c.evalue]).join('\n').replace(/\x1b\[[0-9;]*m/g, '') + '\n'});
+          if (type === 'clear_output') { cell.outputs.clear(c.wait); send('clear'); }
+        };
+        const reply = await future.done;
+        await panel.context.save();
+        if (reply.content.status !== 'ok') throw new Error(reply.content.evalue || 'Code execution stopped.');
+        send('done');
+        return;
+      }
+
       const panel = await app.commands.execute('docmanager:open', {path: NOTEBOOK, factory: 'Notebook'});
       if (!panel?.sessionContext) throw new Error(`Notebook not found: ${NOTEBOOK}`);
       await panel.context.ready;

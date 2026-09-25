@@ -5,21 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ask ARC</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#182a43;font:16px/1.5 system-ui,sans-serif}main{max-width:1080px;margin:auto;padding:28px}h1{font-size:28px;margin:0 0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}label,h2{display:block;font-size:18px;font-weight:650;margin:0 0 10px}input,textarea,pre{width:100%;min-height:220px;margin:0;padding:16px;background:white;border:1px solid #b6c4d6;border-radius:8px;font:15px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}textarea{resize:vertical}input{min-height:0;margin-bottom:18px}button{font:inherit;padding:10px 20px;margin-top:16px;border:0;border-radius:6px;background:#2459c4;color:white;cursor:pointer}button:disabled{opacity:.55;cursor:wait}#status{min-height:24px}details{margin-top:24px}summary{cursor:pointer}iframe{width:100%;height:560px;border:1px solid #b6c4d6;margin-top:12px;background:white}#log{min-height:80px;max-height:250px;overflow:auto}:focus-visible{outline:3px solid #d97a00;outline-offset:3px}@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:18px}}
+*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#182a43;font:16px/1.5 system-ui,sans-serif}main{width:100%;margin:0;padding:24px 32px 240px}h1{font-size:28px;margin:0 0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}label,h2{display:block;font-size:18px;font-weight:650;margin:0 0 10px}input,textarea,pre{width:100%;min-height:220px;margin:0;padding:16px;background:white;border:1px solid #b6c4d6;border-radius:8px;font:15px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}textarea{resize:vertical}input{min-height:0;margin-bottom:18px}button{font:inherit;padding:10px 20px;margin-top:16px;border:0;border-radius:6px;background:#2459c4;color:white;cursor:pointer}button:disabled{opacity:.55;cursor:wait}#status{min-height:24px}details{margin-top:24px}summary{cursor:pointer}.jupyter-window{height:580px;min-height:300px;width:100%;resize:vertical;overflow:hidden;margin-top:12px;padding-bottom:20px;border:1px solid #b6c4d6;border-radius:8px;background:#e8eef7}.jupyter-window iframe{display:block;width:100%;height:100%;border:0;background:white}#log{min-height:80px;max-height:250px;overflow:auto}:focus-visible{outline:3px solid #d97a00;outline-offset:3px}@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:18px 16px 240px}}
 </style>
 </head>
 <body><main>
 <h1>Ask ARC</h1>
 <form id="form"><div class="grid">
 <section><label for="api-key">ARC API key</label><input id="api-key" type="password" autocomplete="off" placeholder="Enter your ARC API key" required>
-<label for="question">Question</label><textarea id="question" required>Why is the sky blue?</textarea><button id="run" disabled>Ask ARC</button><p>Your key is sent to the ARC API through the notebook and is not saved by this page.</p></section>
+<label for="question">Question</label><textarea id="question" required>Why is the sky blue?</textarea><button id="run" disabled>Ask ARC</button><p>If you are not connected to a Virginia Tech network, you will need to turn on the Cisco Secure Client VPN before using this tool. Your API key is only used to connect the notebook to the ARC API and is not saved by this page. The Python code runs locally in your browser on your own computer, so your work stays on your machine.</p></section>
 <section><h2>Results</h2><pre id="result" aria-live="polite">Run the notebook to see its result.</pre></section>
 </div></form>
 <p id="status" role="status">Connecting to JupyterLite…</p>
 <button id="reconnect" type="button" hidden>Reconnect to JupyterLite</button>
 <p id="hosted-help" hidden><a href="https://fl2744.github.io/jupyterlite/notebook-launcher.html">Open the hosted interface</a></p>
-<h2>Notebook output</h2><pre id="log" aria-label="Printed notebook output"></pre>
-<details><summary>Show JupyterLite</summary><iframe id="jupyter" title="JupyterLite notebook"></iframe></details>
+<details id="code-details"><summary>Run Code</summary>
+<form id="code-form"><textarea id="code-input" aria-label="Python or Pyodide code" placeholder="Paste Python or Pyodide code here" spellcheck="false" required style="margin-top:12px"></textarea>
+<button id="code-run" type="submit" disabled>Run</button></form></details>
+<details id="output-details"><summary>Notebook output</summary><pre id="log" aria-label="Printed notebook output" aria-live="polite" style="margin-top:12px"></pre></details>
+<details><summary>Show JupyterLite</summary>
+<div class="jupyter-window" id="jupyter-window"><iframe id="jupyter" title="JupyterLite notebook"></iframe></div>
+</details>
 <noscript>Enable JavaScript to run the notebook.</noscript>
 </main>
 <script>
@@ -32,7 +37,10 @@ const button = document.getElementById('run');
 const status = document.getElementById('status');
 const log = document.getElementById('log');
 const result = document.getElementById('result');
-let activeId = null, connected = false;
+let activeId = null, connected = false, codeSupported = false, activeKind = null;
+const codeButton = document.getElementById('code-run');
+const outputDetails = document.getElementById('output-details');
+function updateButtons() { button.disabled = !connected || !!activeId; codeButton.disabled = !connected || !codeSupported || !!activeId; }
 let ping, slowTimer;
 const reconnect = document.getElementById('reconnect');
 const hostedHelp = document.getElementById('hosted-help');
@@ -44,7 +52,8 @@ window.addEventListener('message', event => {
   if (m.type === 'connected' && m.id === handshake) {
     connected = true; clearInterval(ping); clearTimeout(slowTimer);
     reconnect.hidden = true; hostedHelp.hidden = true;
-    button.disabled = false; status.textContent = 'Ready.'; return;
+    codeSupported = m.capabilities?.includes('run-code') === true;
+    updateButtons(); status.textContent = codeSupported ? 'Ready.' : 'Ask ARC is ready. Update the JupyterLite bridge to enable Run Code.'; return;
   }
   if (!activeId || m.id !== activeId) return;
   if (m.type === 'status') status.textContent = m.text;
@@ -53,14 +62,17 @@ window.addEventListener('message', event => {
   if (m.type === 'result') result.textContent = m.outputs?.answer ?? JSON.stringify(m.outputs, null, 2);
   if (m.type === 'done' || m.type === 'error') {
     status.textContent = m.type === 'done' ? 'Finished.' : 'Error: ' + m.error;
-    if (m.type === 'error') result.textContent = 'No result returned.';
-    activeId = null; button.disabled = false;
+    if (m.type === 'error') {
+      if (activeKind === 'code') log.textContent += '\nError: ' + m.error;
+      else result.textContent = 'No result returned.';
+    }
+    activeId = null; activeKind = null; updateButtons();
   }
 });
 function connect() {
   if (activeId) return;
   clearInterval(ping); clearTimeout(slowTimer);
-  connected = false; button.disabled = true; reconnect.hidden = true;
+  connected = false; codeSupported = false; updateButtons(); reconnect.hidden = true;
   handshake = 'connect-' + Math.random().toString(36).slice(2);
   status.textContent = 'Connecting to JupyterLite… The first load may take a minute.';
   // A fresh URL avoids reusing a Lab page cached before the bridge was installed.
@@ -97,10 +109,22 @@ document.getElementById('form').addEventListener('submit', event => {
   };
   if (!inputs.api_key || !inputs.question) { status.textContent = 'Enter an ARC API key and a question.'; return; }
   activeId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-  button.disabled = true; log.textContent = ''; result.textContent = 'Running…';
+  activeKind = 'arc'; updateButtons(); log.textContent = ''; result.textContent = 'Running…';
   status.textContent = 'Sending inputs…';
   send({type:'run', id:activeId, inputs});
   document.getElementById('api-key').value = '';
   inputs.api_key = '';
+});
+document.getElementById('code-form').addEventListener('submit', event => {
+  event.preventDefault();
+  if (!connected || !codeSupported || activeId) return;
+  const code = document.getElementById('code-input').value;
+  if (!code.trim()) return;
+  if (code.length > 200000) { status.textContent = 'Please limit pasted code to 200,000 characters.'; return; }
+  activeId = 'code-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  activeKind = 'code'; updateButtons();
+  outputDetails.open = true; log.textContent = '';
+  status.textContent = 'Creating your notebook…';
+  send({type:'run-code', id:activeId, code});
 });
 </script></body></html>
