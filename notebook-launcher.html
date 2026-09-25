@@ -82,7 +82,7 @@ if (location.protocol === 'file:') {
   status.textContent = 'Opening the hosted interface…';
   hostedHelp.hidden = false;
   location.replace(hostedURL);
-} else if (location.origin !== url.origin && location.origin !== 'http://localhost:8000') {
+} else if (![url.origin, 'http://localhost:8000', 'https://l1001.vt.domains'].includes(location.origin)) {
   status.textContent = 'This address is not configured to connect to the notebook. Use the hosted interface below.';
   hostedHelp.hidden = false;
 } else {

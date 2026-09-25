@@ -66,3 +66,10 @@ interactive notebook stdin prompts are not part of this bridge contract.
 References:
 - https://jupyterlite.readthedocs.io/en/stable/reference/schema-v0.html
 - https://jupyterlab.readthedocs.io/en/stable/api/classes/services.KernelConnection.html
+
+## VT Domains interface
+
+Upload `notebook-launcher.html` to `public_html/notebook-launcher.html` for
+https://l1001.vt.domains/notebook-launcher.html. Both the form and bridge permit
+that exact HTTPS origin. JupyterLite and the notebook remain on GitHub Pages.
+Do not upload the source notebook or installer to cPanel.

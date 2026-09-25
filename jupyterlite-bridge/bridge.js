@@ -2,7 +2,7 @@
 (() => {
   const CHANNEL = 'notebook-bridge-v1';
   // Add the exact origin of your HTML page here if hosted elsewhere.
-  const ALLOWED_ORIGINS = new Set([location.origin, 'http://localhost:8000']);
+  const ALLOWED_ORIGINS = new Set([location.origin, 'http://localhost:8000', 'https://l1001.vt.domains']);
   const NOTEBOOK = 'pyodide/simple-api-call.ipynb';
   let busy = false;
   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
